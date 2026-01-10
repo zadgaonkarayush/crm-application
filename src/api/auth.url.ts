@@ -1,0 +1,1 @@
+export const BASE_URL = "https://crm-backend-b62e.onrender.com/api"
