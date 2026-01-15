@@ -18,3 +18,7 @@ export const getAllOrders = async():Promise<Order[]>=>{
     const response = await api.get("/orders");
     return response.data
 }
+export const getOrderByCustomer = async(customerId:string):Promise<Order[]>=>{
+    const response = await api.get(`/orders/customerOrder/${customerId}`);
+    return response.data.orders
+}
