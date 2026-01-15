@@ -10,7 +10,7 @@ export const createOrder = async(
 
 export const generateInvoice = async(orderId:string)=>{
     const response = await api.post(`/orders/${orderId}/invoice`,null,{
-        responseType:"blob"
+          responseType: "arraybuffer",
     });
     return response.data
 }

@@ -1,11 +1,14 @@
 // OrderDetailScreen.tsx
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useState } from "react";
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from "react-redux";
 import { RootState } from "../store/store";
-
+import { generateInvoice } from "../api/order.api";
+import * as FileSystem from "expo-file-system/legacy";
+import * as Sharing from "expo-sharing";
+import { Buffer } from "buffer";
 // Assume we pass isAdmin prop to know if user can change status
 export default function OrderDetailScreen({ route, navigation }: any) {
   const { order, isAdmin = false } = route.params; 
@@ -15,6 +18,34 @@ export default function OrderDetailScreen({ route, navigation }: any) {
     (sum: number, i: any) => sum + i.quantity * i.price,
     0
   );
+
+ const handleDownloadInvoice = async () => {
+  try {
+    const pdfData = await generateInvoice(order._id);
+
+    const fileUri =
+      FileSystem.documentDirectory + `invoice_${order._id}.pdf`;
+
+    const base64Data = Buffer.from(pdfData).toString("base64");
+
+    await FileSystem.writeAsStringAsync(
+      fileUri,
+      base64Data,
+      { encoding: "base64" } // ✅ STRING, NOT EncodingType
+    );
+
+    if (await Sharing.isAvailableAsync()) {
+      await Sharing.shareAsync(fileUri);
+    } else {
+      Alert.alert("Success", "Invoice saved at: " + fileUri);
+    }
+
+  } catch (error) {
+    console.error("Failed to download invoice:", error);
+    Alert.alert("Error", "Failed to download invoice");
+  }
+};
+
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -91,7 +122,7 @@ export default function OrderDetailScreen({ route, navigation }: any) {
         {/* INVOICE */}
         <TouchableOpacity
           style={styles.invoiceBtn}
-          onPress={() => navigation.navigate("Invoice", { order })}
+          onPress={handleDownloadInvoice}
         >
           <Ionicons name="document-text-outline" size={18} color="#fff" />
           <Text style={styles.invoiceText}>Generate Invoice</Text>
