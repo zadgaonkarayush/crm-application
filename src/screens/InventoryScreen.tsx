@@ -14,7 +14,7 @@ import authStyles from '../styles/authStyles';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fetchProducts } from '../features/products/productSlice';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -33,6 +33,9 @@ export default function InventoryScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const navigation = useNavigation<NavigationProp>();
+  const [searchText,setSearchText] = useState('');
+
+
 
   useEffect(() => {
     dispatch(fetchProducts());
@@ -42,7 +45,8 @@ export default function InventoryScreen() {
     await dispatch(fetchProducts());
     setRefreshing(false);
   };
-  const filterProducts = products.filter((p) => {
+  const filterProducts = useMemo(()=>{
+    return products.filter((p) => {
     switch (activeFilter) {
       case 'IN_STOCK':
         return p.stock > 10;
@@ -55,7 +59,14 @@ export default function InventoryScreen() {
       default:
         return true;
     }
-  });
+  })
+  },[products, activeFilter]);
+  const filterSearchProducts = useMemo(()=>{
+    return filterProducts.filter((p)=>(
+      p.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      p.sku.toLowerCase().includes(searchText.toLowerCase()) 
+    ))
+  },[filterProducts, searchText])
   return (
     <SafeAreaView style={authStyles.safe}>
       <ScrollView
@@ -84,6 +95,8 @@ export default function InventoryScreen() {
           <TextInput
             placeholder='Search by name or SKU...'
             style={inventoryStyle.input}
+            value={searchText}
+            onChangeText={setSearchText}
           />
         </View>
 
@@ -124,7 +137,7 @@ export default function InventoryScreen() {
         {/* product cards */}
         {loading && <ActivityIndicator size='large' color='#1E5EF3' />}
         {!loading &&
-          filterProducts.map((p, i) => (
+           filterSearchProducts.map((p, i) => (
             <View key={i} style={inventoryStyle.card}>
               <View style={inventoryStyle.cardHeader}>
                 <Text style={inventoryStyle.productName}>{p.name}</Text>

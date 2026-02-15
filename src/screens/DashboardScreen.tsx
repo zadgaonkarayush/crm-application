@@ -3,7 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import dashboardStyles from '../styles/DashboardStyle';
 import authStyles from '../styles/authStyles';
 import { Ionicons } from '@expo/vector-icons';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   getLast7DaysSale,
   getLowStock,
@@ -15,12 +15,10 @@ import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
 import { fetchOrders } from '../features/orders/orderSlice';
 
-
 interface Last7DaysSale {
-  _id: number;   // "YYYY-MM-DD"
+  _id: number; // "YYYY-MM-DD"
   total: number;
 }
-
 
 export default function DashboardScreen({ navigation }: any) {
   const [lowstock, setLowStock] = useState(0);
@@ -31,50 +29,46 @@ export default function DashboardScreen({ navigation }: any) {
 
   const dispatch = useDispatch<AppDispatch>();
 
-  const {orders} = useSelector((state:RootState)=>state.order);
+  const { orders } = useSelector((state: RootState) => state.order);
 
-  const recentOrders = orders
-  .slice() // create a copy
-  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()) // newest first
-  .slice(0, 4); // only 4
+  const recentOrders = useMemo(() => {
+    return orders
+      .slice() // create a copy
+      .sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ) // newest first
+      .slice(0, 4); // only 4
+  }, [orders]);
 
   const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    const loadLowStock = async () => {
+    const loadDashboard = async () => {
       setLoading(true);
-      const data = await getLowStock();
-      setLowStock(data);
-      setLoading(false);
+      try {
+        const [low, open, seven, totalSales] = await Promise.all([
+          getLowStock(),
+          getOpenOrders(),
+          getLast7DaysSale(),
+          getTotalSale(),
+        ]);
+        setLowStock(low);
+        setOpenOrder(open);
+        setSevenDays(seven);
+        setTotalSales(totalSales);
+      } catch (err) {
+        console.log('Dashboard loading error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
-    const loadOpenOrders = async () => {
-      setLoading(true);
-      const data = await getOpenOrders();
-      setOpenOrder(data);
-      setLoading(false);
-    };
-    const loadTotalSales = async () => {
-      setLoading(true);
-      const data = await getTotalSale();
-      setTotalSales(data);
-      setLoading(false);
-    };
-    const loadLast7days = async () => {
-      setLoading(true);
-      const data = await getLast7DaysSale();
-      setSevenDays(data);
-      setLoading(false);
-    };
-   
-    loadLowStock();
-    loadOpenOrders();
-    loadTotalSales();
-    loadLast7days();
+    loadDashboard();
   }, []);
 
-    useEffect(() => {
-      dispatch(fetchOrders());
-    }, [dispatch]);
+  useEffect(() => {
+    dispatch(fetchOrders());
+  }, [dispatch]);
 
   const buildsLast7DaysData = () => {
     const today = new Date();
@@ -100,23 +94,22 @@ export default function DashboardScreen({ navigation }: any) {
     }
     return days;
   };
-  const chartData = buildsLast7DaysData();
+  const chartData = useMemo(buildsLast7DaysData, [sevenDays]);
   const maxValue = Math.max(...chartData.map((d) => d.total), 1);
   const BAR_MAX_HEIGHT = 180;
 
   const getStatusColor = (status: string) => {
-  switch (status.toLowerCase()) {
-    case "shipped":
-      return "#A7F3D0"; // green
-    case "pending":
-      return "#FDE68A"; // yellow
-    case "cancelled":
-      return "#FECACA"; // red
-    default:
-      return "#D1D5DB"; // gray
-  }
-};
-
+    switch (status.toLowerCase()) {
+      case 'shipped':
+        return '#A7F3D0'; // green
+      case 'pending':
+        return '#FDE68A'; // yellow
+      case 'cancelled':
+        return '#FECACA'; // red
+      default:
+        return '#D1D5DB'; // gray
+    }
+  };
 
   return (
     <SafeAreaView style={authStyles.safe}>
@@ -187,37 +180,35 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
         </View>
 
-       
-        
-
         {/* Recent Orders */}
         <View style={dashboardStyles.sectionHeaderRow}>
           <Text style={dashboardStyles.sectionTitle}>Recent Orders</Text>
-          <TouchableOpacity onPress={() => navigation.navigate("Orders")}>
+          <TouchableOpacity onPress={() => navigation.navigate('Orders')}>
             <Text style={dashboardStyles.link}>View All</Text>
           </TouchableOpacity>
         </View>
 
-      {recentOrders.map((order, i) => (
-  <View key={i} style={dashboardStyles.orderCard}>
-    <View style={dashboardStyles.iconCircleSm}>
-      <Ionicons name='receipt-outline' size={20} color='#377DFF' />
-    </View>
-    <View style={{ flex: 1 }}>
-      <Text style={dashboardStyles.orderId}>{order._id}</Text>
-      <Text style={dashboardStyles.orderCompany}>{order.customer?.name}</Text>
-    </View>
-    <View
-      style={[
-        dashboardStyles.statusBox,
-        { backgroundColor: getStatusColor(order.status) },
-      ]}
-    >
-      <Text style={dashboardStyles.statusText}>{order.status}</Text>
-    </View>
-  </View>
-))}
-
+        {recentOrders.map((order, i) => (
+          <View key={i} style={dashboardStyles.orderCard}>
+            <View style={dashboardStyles.iconCircleSm}>
+              <Ionicons name='receipt-outline' size={20} color='#377DFF' />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={dashboardStyles.orderId}>{order._id}</Text>
+              <Text style={dashboardStyles.orderCompany}>
+                {order.customer?.name}
+              </Text>
+            </View>
+            <View
+              style={[
+                dashboardStyles.statusBox,
+                { backgroundColor: getStatusColor(order.status) },
+              ]}
+            >
+              <Text style={dashboardStyles.statusText}>{order.status}</Text>
+            </View>
+          </View>
+        ))}
       </ScrollView>
     </SafeAreaView>
   );

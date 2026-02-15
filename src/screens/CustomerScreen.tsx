@@ -1,124 +1,3 @@
-// import { Ionicons } from "@expo/vector-icons";
-// import {
-//   View,
-//   Text,
-//   ScrollView,
-//   TouchableOpacity,
-//   TextInput,
-//   Image,
-// } from "react-native";
-// import { SafeAreaView } from "react-native-safe-area-context";
-// import customerStyles from "../styles/customersStyle";
-// import authStyles from "../styles/authStyles";
-// import inventoryStyle from "../styles/inventoryStyles";
-// import dashboardStyles from "../styles/DashboardStyle";
-// import orderStyles from "../styles/orderStyles";
-// import { useDispatch, useSelector } from "react-redux";
-// import { AppDispatch, RootState } from "../store/store";
-// import { useEffect, useState } from "react";
-// import { fetchCustomers } from "../features/customer/customerSlice";
-// import { useNavigation } from "@react-navigation/native";
-
-// export default function CustomerScreen() {
-//   const navigation = useNavigation();
-//   const dispatch:AppDispatch =useDispatch();
-//   const [activeTab,setActiveTab] = useState('All');
-
-//   const customers = useSelector((state:RootState)=>state.customer.customers)
-
-// useEffect(() => {
-//   dispatch(fetchCustomers()).then((res) => {
-//     console.log("Fetched customers:", res.payload);
-//   });
-// }, []);
-
-
-//    const filteredCustomer = activeTab === 'All' ?
-//    customers :
-//    customers.filter((item)=>item.status.toLowerCase() === activeTab.toLowerCase());   
-
-//   return (
-//     <SafeAreaView style={authStyles.safe}>
-//       <ScrollView
-//         showsVerticalScrollIndicator={false}
-//         style={orderStyles.container}
-//       >
-//         {/* Header */}
-//         <Text style={inventoryStyle.title}>Customers</Text>
-
-//         {/* Search Bar */}
-//         <View style={inventoryStyle.searchBox}>
-//           <Ionicons name="search" size={20} color="#9CA3AF" />
-//           <TextInput
-//             placeholder="Search customers..."
-//             placeholderTextColor="#9CA3AF"
-//             style={inventoryStyle.input}
-//           />
-//         </View>
-
-//         {/* Filter Tabs */}
-//      <ScrollView
-//      horizontal
-//      showsHorizontalScrollIndicator={false}
-//         style={{ marginVertical: 10 }}
-//      >
-//          <View style={customerStyles.filterRow}>
-//           {["All", "Lead", "Active", "Inactive"].map((item, i) => (
-//             <TouchableOpacity
-//               key={i}
-//               style={[
-//                 customerStyles.filterBtn,
-//                 activeTab === item && customerStyles.filterBtnActive,
-//               ]}
-//               onPress={()=>setActiveTab(item)}
-//             >
-//               <Text
-//                 style={[
-//                   customerStyles.filterText,
-//                   activeTab === item && customerStyles.filterTextActive,
-//                 ]}
-//               >
-//                 {item}
-//               </Text>
-//             </TouchableOpacity>
-//           ))}
-//         </View>
-//      </ScrollView>
-
-//         {/* Customer List */}
-//         {filteredCustomer.map((c, i) => (
-//           <TouchableOpacity key={i} style={customerStyles.card} 
-//           onPress={()=>navigation.navigate('CustomerDetails',{id:c.id})}
-//           >
-//             <Image source={{   uri: "https://cdn-icons-png.flaticon.com/512/921/921071.png" }} style={customerStyles.avatar} />
-
-//             <View style={customerStyles.cardInfo}>
-//               <Text style={customerStyles.name}>{c.name}</Text>
-//               <Text style={customerStyles.company}>{c.company}</Text>
-//               <Text style={customerStyles.details}>
-//                 {c.email}, {c.phone}
-//               </Text>
-//             </View>
-
-//             <Ionicons
-//               name="chevron-forward"
-//               size={22}
-//               color="#9CA3AF"
-//               style={{ marginLeft: "auto" }}
-//             />
-//           </TouchableOpacity>
-//         ))}
-//       </ScrollView>
-
-//       {/* Floating Add Button */}
-//       <TouchableOpacity style={orderStyles.floatingBtn}
-//       onPress={()=>navigation.navigate('AddCustomerScreen')}
-//       >
-//         <Ionicons name="add" size={32} color="#fff" />
-//       </TouchableOpacity>
-//     </SafeAreaView>
-//   );
-// }
 import { Ionicons } from "@expo/vector-icons";
 import {
   View,
@@ -132,7 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigation } from "@react-navigation/native";
 
 import customerStyles from "../styles/customersStyle";
@@ -163,11 +42,13 @@ export default function CustomerScreen() {
     await dispatch(fetchCustomers());
     setRefreshing(false);
   };
-const filteredCustomers = customers
+const filteredCustomers = useMemo(()=>{
+ return customers
   .filter(Boolean) // removes undefined / null
   .filter((c) =>
     c.name?.toLowerCase().includes(search.toLowerCase())
   );
+},[customers,search])
 
 
   return (

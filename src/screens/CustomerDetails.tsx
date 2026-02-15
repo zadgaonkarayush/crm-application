@@ -43,9 +43,11 @@ export default function CustomerDetails() {
       try {
         const data = await getOrderByCustomer(id);
         setOrders(data);
-        setLoading(false);
+       
       } catch (error) {
         console.error('Failed to fetch orders for customer:', error);
+      }finally{
+         setLoading(false);
       }
     };
     fetchOrderByCustomer();

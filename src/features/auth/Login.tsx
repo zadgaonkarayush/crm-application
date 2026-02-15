@@ -123,10 +123,12 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
+     console.log("login started");
     try {
       const resultAction = await dispatch(loginUser({ email, password }));
       if (loginUser.fulfilled.match(resultAction)) {
         await AsyncStorage.setItem("token", resultAction.payload.token);
+        console.log("Token saved:", resultAction.payload.token);
         navigation.navigate("Tabs");
       }
     } catch (err) {

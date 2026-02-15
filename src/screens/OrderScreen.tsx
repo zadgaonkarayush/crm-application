@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../store/store';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { fetchOrders, setOrderFilter } from '../features/orders/orderSlice';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -48,7 +48,8 @@ export default function OrderScreen() {
   //     o.customer?.name.toLowerCase().includes(searchText.toLowerCase()) ||
   //     o._id.toLowerCase().includes(searchText.toLowerCase())
   //   );
-  const filteredOrderData = orders
+  const filteredOrderData =useMemo(()=>{
+    return orders
     .filter((o) => {
       if (activeFilter === 'All') return true;
       return o.status && o.status.toLowerCase() === activeFilter.toLowerCase();
@@ -62,6 +63,7 @@ export default function OrderScreen() {
         orderId.toLowerCase().includes(searchText.toLowerCase())
       );
     });
+  },[orders, activeFilter, searchText]);
 
   return (
     <SafeAreaView style={styles.safe}>
